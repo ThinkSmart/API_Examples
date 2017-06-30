@@ -24,12 +24,12 @@ import csv
 
 # global vars for data in body of API calls
 url_root = 'https://default.tap.thinksmart.com/prod/'
-username = 'cpierce@thinksmart.com'
+username = input("Enter your TAP username: ")
 password = getpass.getpass()
 client_id = 'b858d97c24124c959ec0d78f3eccd77d'
 client_secret = '0WDF4cRc4gtEEhOBXkCH6dTj1NU18L8iL6+i3jHXoR4='
-workflow_name = 'CamTest'
-csv_name = 'CamTestFields.csv'
+workflow_name = 'InitiateTest'
+csv_name = 'TestFields.csv'
 
 # get start time
 t0 = time.time()

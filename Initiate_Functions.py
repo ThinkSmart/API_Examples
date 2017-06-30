@@ -46,6 +46,19 @@ def getTemplateID(url_root, workflow_name, token):
 	# return GET call response
 	return requests.get(url, headers=headers)
 
+def getFormInfo(url_root, template_id, token):
+	"""
+	Given: Environment, ID of workflow, and valid token.
+	Return: Response of GET call for form info.
+	"""
+
+	url = '{}api/v1/workflows/form?templateId={}'.format(url_root, template_id)
+
+	headers = {'Authorization' : 'Bearer ' + token,
+							'Content-Type' : 'application/json'}
+
+	return requests.get(url, headers=headers)
+
 def createWorkflow(url_root, template_id, token, body):
 	"""
 	Given: Environment, ID of workflow, valid token, and field names and values.
@@ -64,16 +77,3 @@ def createWorkflow(url_root, template_id, token, body):
 
 	# return POST call response
 	return requests.post(url, headers=headers, data=json_body)
-
-def getFormInfo(url_root, template_id, token):
-	"""
-	Given: Environment, ID of workflow, and valid token.
-	Return: Response of GET call for form info.
-	"""
-
-	url = '{}api/v1/workflows/form?templateId={}'.format(url_root, template_id)
-
-	headers = {'Authorization' : 'Bearer ' + token,
-							'Content-Type' : 'application/json'}
-
-	return requests.get(url, headers=headers)
