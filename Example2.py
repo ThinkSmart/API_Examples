@@ -106,7 +106,7 @@ def createWorkflow(url_root, template_id, token, body):
 # -------------- #
 
 print("In a few seconds, a tab in your browser will open. " +
-			"Enter your TAP credentials, and you will be redirected to Google. " +
+			"Enter your TAP credentials, and you will be redirected. " +
 			"Please copy and paste the URL of the Google redirect page into the space below.")
 
 time.sleep(3)
