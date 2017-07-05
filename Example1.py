@@ -1,5 +1,6 @@
+# Example1.py
 # written and tested in Python 3.6.0
-# last updated 06/29/17
+# last updated 07/05/17
 
 import getpass
 import requests
@@ -12,11 +13,10 @@ import json
 url_root = 'https://default.tap.thinksmart.com/prod/'
 client_id = 'b858d97c24124c959ec0d78f3eccd77d'
 client_secret = '0WDF4cRc4gtEEhOBXkCH6dTj1NU18L8iL6+i3jHXoR4='
+workflow_name = 'InitiateTest'
 
 username = input("Please enter your TAP username: ")
 password = getpass.getpass("Enter your password: ")
-
-workflow_name = "CamTest"
 
 # --------- #
 # Functions #
@@ -47,7 +47,7 @@ def getToken(url_root, username, password, client_id, client_secret):
 	r = requests.post(url, headers=headers, data=body)
 	
 	# parse POST call response, return token
-	return json.loads(r.text)["access_token"]
+	return json.loads(r.text).get('access_token')
 
 def getTemplateID(url_root, workflow_name, token):
 	"""
@@ -85,7 +85,7 @@ def createWorkflow(url_root, template_id, token, body):
 	# encode body into JSON
 	json_body = json.dumps(body)
 
-	# make POST call
+	# make API call
 	requests.post(url, headers=headers, data=json_body)
 
 # -------------- #

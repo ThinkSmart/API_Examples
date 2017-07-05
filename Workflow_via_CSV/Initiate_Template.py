@@ -1,6 +1,6 @@
 # Initiate_Template.py
 # written and tested in Python 3.6.0
-# last updated 07/04/17
+# last updated 07/05/17
 
 """
 This script initiates workflows using field data from a CSV file. The first
@@ -121,7 +121,8 @@ submit_count = 0
 for index, field_vals in enumerate(csv_fields, 2):
 	# refresh token if needed
 	if ((time.time()-t0) > 3600):
-		token = getToken(url_root, username, password, client_id, client_secret)
+		r = getToken(url_root, username, password, client_id, client_secret)
+		token = json.loads(r.text).get('access_token')
 	# clear body
 	body = {}
 	# fill body

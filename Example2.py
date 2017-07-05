@@ -1,76 +1,71 @@
-# resource_owner.py
+# Example2.py
 # written and tested in Python 3.6.0
-# last updated 06/26/17
+# last updated 07/05/17
 
+import webbrowser
 import requests
 import json
-import getpass
-import webbrowser
 import time
 
 # ---------------- #
 # Global Variables #
 # ---------------- #
 
-# https://default.tap.thinksmart.com/prod/auth/identity/connect/authorize?client_id=&scope=api&response_type=code&redirect_uri=https://google.com
-
 url_root = 'https://default.tap.thinksmart.com/prod/'
-redirect_uri = "https://google.com"
+redirect_uri = 'https://google.com'
 client_id = '157b66c9f77c4283b807f23d245b3c72'
 client_secret = '+jlq7YVyAq2OB5/SghSOXOA2/8AzqO/br/Yn8Hpoz/Y='
-
-workflow_name = "CamTest"
-
+workflow_name = 'InitiateTest'
 
 # --------- #
 # Functions #
 # --------- #
 
-
 def getCode(url_root, client_id, redirect_uri):
 	"""
-	Given: Environment, user credentials, and client info.
-	Return: Response of POST call for token.
+	Given: Environment, client ID, and redirect URI.
+	Return: None, opens browser for user to enter credentials.
 	"""
 
 	# concatenate environment address with piece of URL specific to API
-	url = url_root + 'auth/identity/connect/authorize?client_id={}&scope=api&response_type=code&redirect_uri={}'.format(client_id, redirect_uri)
+	url = url_root + ('auth/identity/connect/authorize?' +
+										'client_id=' + client_id +
+										'&scope=api&' +
+										'response_type=code&' +
+										'redirect_uri=' + redirect_uri)
 
 	webbrowser.open_new(url)
 
 def getToken(url_root, code, client_id, client_secret):
 	"""
-	Given: Environment, id, secret, and code.
-	Return: Response of GET call for ID of template.
+	Given: Environment, code, and client info.
+	Return: Access token, valid for 1 hour.
 	"""
 
 	# construct URL
 	url = '{}auth/identity/connect/token'.format(url_root)
 
-	# needs token
+	# static header, see docs.thinksmart1.apiary.io for documentation
 	headers = {'Content-Type' : 'x-www-form-urlencoded'}
 
-	payload = {
-		"grant_type":"authorization_code",
-		"scope":"api",
-		"redirect_uri":"https://google.com",
-		"code":code,
-		"client_id":client_id,
-		"client_secret":client_secret  
-	}
+	# create dict for body
+	body = {'grant_type' : 'authorization_code',
+					'scope' : 'api',
+					'redirect_uri' : 'https://google.com',
+					'code' : code,
+					'client_id' : client_id,
+					'client_secret' : client_secret}
 
-	# return POST call response
-	r = requests.post(url, headers=headers, data=payload)
-	j = json.loads(r.text)
+	# make API call
+	r = requests.post(url, headers=headers, data=body)
 
-	token = j["access_token"]
-
-	return token
+	# parse POST call response, return token
+	return json.loads(r.text).get('access_token')
 
 def getTemplateID(url_root, workflow_name, token):
 	"""
 	Given: Environment, name of workflow, and valid token.
-	Return: Response of GET call for ID of template.
+	Return: Template ID of workflow.
 	"""
 
 	# construct URL
@@ -81,15 +76,16 @@ def getTemplateID(url_root, workflow_name, token):
 	# needs token
 	headers = {'Authorization' : 'Bearer ' + token}
 
-	# return GET call response
+	# make API call
 	r = requests.get(url, headers=headers)
-	print(r)
+
+	# parse GET call response, return template ID
 	return json.loads(r.text).get('Items')[0].get('ID')
 
 def createWorkflow(url_root, template_id, token, body):
 	"""
 	Given: Environment, ID of workflow, valid token, and field names and values.
-	Return: Response of POST call to initiate workflow.
+	Return: None, makes POST call to initiate workflow.
 	"""
 	
 	# construct URL
@@ -99,47 +95,30 @@ def createWorkflow(url_root, template_id, token, body):
 	headers = {'Authorization' : 'Bearer ' + token,
 							'Content-Type' : 'application/json'}
 
-	# decode body into JSON
+	# encode body into JSON
 	json_body = json.dumps(body)
 
-	# return POST call response
-	return requests.post(url, headers=headers, data=json_body)
-
-
-
+	# make API call
+	requests.post(url, headers=headers, data=json_body)
 
 # -------------- #
 # Function Calls #
 # -------------- #
 
-print("In 5 seconds, a window will open asking you to login. Then it will redirect you to google. Please copy and paste the url of the Google redirect page below. And don't worry about the execution error below")
+print("In a few seconds, a tab in your browser will open. " +
+			"Enter your TAP credentials, and you will be redirected to Google. " +
+			"Please copy and paste the URL of the Google redirect page into the space below.")
 
 time.sleep(3)
 
 getCode(url_root, client_id, redirect_uri)
-redirect = raw_input("URL from Google redirect page:")
-code = redirect.split("code=")[1]
+redirect = input("URL from Google redirect page:")
+code = redirect.split('code=')[1]
 
 token = getToken(url_root, code, client_id, client_secret)
 
 template_id = getTemplateID(url_root, workflow_name, token)
 
-answersToSubmit = {"element5": "Hello", "element6": "World"}
+body = {"element5": "Hello", "element6": "World", "element7": "Dogs"}
 
-createWorkflow(url_root, template_id, token, answersToSubmit)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+createWorkflow(url_root, template_id, token, body)
