@@ -1,16 +1,16 @@
 # Initiate_Template.py
 # written and tested in Python 3.6.0
-# last updated 06/30/17
+# last updated 07/04/17
 
 """
-This script initiates workflows using field data from a .csv file. The first
-row of the .csv should contain field names, and subsequest rows should hold 
+This script initiates workflows using field data from a CSV file. The first
+row of the CSV should contain field names, and subsequest rows should hold 
 field values (each row will be a separate instance of the workflow). The script
-creates a new .txt file (in the same directory as main.py) each time it is run, 
+creates a new txt file (in the same directory as main.py) each time it is run, 
 and writes the result of each workflow instance, including error messages.
 
-To use, create a workflow (don't change field names, e.g. element1), create a 
-.csv based on the workflow, and update the global vars below. If you find bugs
+To use, create a workflow (don't change field names, i.e. element1), create a 
+CSV based on the workflow, and update the global vars below. If you find bugs
 or errors that are not handled, please send them to cpierce@thinksmart.com
 """
 
@@ -22,7 +22,7 @@ import json
 from Initiate_Functions import *
 import csv
 
-# global vars for data in body of API calls
+# global vars
 url_root = 'https://default.tap.thinksmart.com/prod/'
 username = input("Enter your TAP username: ")
 password = getpass.getpass()
@@ -34,12 +34,12 @@ csv_name = 'TestFields.csv'
 # get start time
 t0 = time.time()
 
-# find name for new .txt file
+# find name for new txt file
 i = 0
 while os.path.exists('{}{}.txt'.format(workflow_name, i)):
 	i += 1
 
-# create .txt file, write header
+# create txt file, write header
 f = open('{}{}.txt'.format(workflow_name, i), 'w')
 f.write(time.asctime() + "\n\n")
 f.write("Submitting {} with field values from {}...\n\n"
@@ -63,14 +63,14 @@ token = json.loads(r.text).get('access_token')
 
 # get template ID response
 r = getTemplateID(url_root, workflow_name, token)
-# invalid workflow_name causes empty 'Items' key in response dict
-if (len(json.loads(r.text).get('Items')) == 0):
+# invalid workflow_name causes empty list value for 'Items' key in response dict
+if (not json.loads(r.text).get('Items')):
 	f.write("Invalid workflow_name")
 	sys.exit()
 # decode JSON, get ID
 template_id = json.loads(r.text).get('Items')[0].get('ID')
 
-# open csv
+# open CSV
 try:
 	readable = open(csv_name, 'r', encoding='utf-8')
 # invalid csv_name causes FileNotFoundError
@@ -78,7 +78,7 @@ except FileNotFoundError:
 	f.write("Invalid csv_name")
 	sys.exit()
 
-# create iterable with csv
+# create iterable with CSV
 csv_fields = csv.reader(readable)
 # assign first row of iterable to field_names
 try:
@@ -103,10 +103,10 @@ accepted_unused = set(accepted_names).difference(field_names)
 if (not csv_unused) and (not accepted_unused):
 	f.write("All field names from {} and {} match\n\n"
 					.format(csv_name, workflow_name))
-elif not accepted_unused:
+elif (not accepted_unused):
 	f.write("Field names from {} that do not match {}: {}\n\n"
 					.format(csv_name, workflow_name, csv_unused))
-elif not csv_unused:
+elif (not csv_unused):
 	f.write("Field names from {} that do not match {}: {}\n\n"
 					.format(workflow_name, csv_name, accepted_unused))
 else:
