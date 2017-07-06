@@ -22,7 +22,7 @@ import json
 from Initiate_Functions import *
 import csv
 
-# global vars
+# global vars (currently specific to default prod)
 url_root = 'https://default.tap.thinksmart.com/prod/'
 username = input("Enter your TAP username: ")
 password = getpass.getpass()
