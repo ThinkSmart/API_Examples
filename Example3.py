@@ -12,7 +12,8 @@ import time
 # ---------------- #
 
 url_root = 'https://default.tap.thinksmart.com/prod/'
-client_id = '9853293df6f84c83835e19e359154ade'
+client_id = '157b66c9f77c4283b807f23d245b3c72'
+client_secret = '+jlq7YVyAq2OB5/SghSOXOA2/8AzqO/br/Yn8Hpoz/Y='
 redirect_uri = 'https://google.com'
 workflow_name = 'InitiateTest'
 
@@ -20,7 +21,7 @@ workflow_name = 'InitiateTest'
 # Functions #
 # --------- #
 
-def getToken(url_root, client_id, redirect_uri):
+def getCode(url_root, client_id, redirect_uri):
 	"""
 	Given: Environment, client ID, and redirect URI.
 	Return: None, opens browser for user to enter credentials.
@@ -30,11 +31,37 @@ def getToken(url_root, client_id, redirect_uri):
 	url = url_root + ('auth/identity/connect/authorize?' +
 										'client_id=' + client_id +
 										'&scope=api&' +
-										'response_type=token&' +
+										'response_type=code&' +
 										'redirect_uri=' + redirect_uri)
 
 	# open browser
 	webbrowser.open_new(url)
+
+def getToken(url_root, code, client_id, client_secret):
+	"""
+	Given: Environment, code, and client info.
+	Return: Access token, valid for 1 hour.
+	"""
+
+	# construct URL
+	url = '{}auth/identity/connect/token'.format(url_root)
+
+	# static header, see docs.thinksmart1.apiary.io for documentation
+	headers = {'Content-Type' : 'x-www-form-urlencoded'}
+
+	# create dict for body
+	body = {'grant_type' : 'authorization_code',
+					'scope' : 'api',
+					'redirect_uri' : 'https://google.com',
+					'code' : code,
+					'client_id' : client_id,
+					'client_secret' : client_secret}
+
+	# make API call
+	r = requests.post(url, headers=headers, data=body)
+
+	# parse POST call response, return token
+	return json.loads(r.text).get('access_token')
 
 def getTemplateID(url_root, workflow_name, token):
 	"""
@@ -85,9 +112,11 @@ print("In a few seconds, a tab in your browser will open. " +
 
 time.sleep(3)
 
-getToken(url_root, client_id, redirect_uri)
+getCode(url_root, client_id, redirect_uri)
 redirect = input("URL from Google redirect page: ")
-token = redirect.split('token=')[1].split('&')[0]
+code = redirect.split('code=')[1]
+
+token = getToken(url_root, code, client_id, client_secret)
 
 template_id = getTemplateID(url_root, workflow_name, token)
 
