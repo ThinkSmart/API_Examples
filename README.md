@@ -11,4 +11,4 @@ Further documentation can be found on [Apiary](http://docs.thinksmart1.apiary.io
 
 [Example #3](https://github.com/ThinkSmart/API_Examples/blob/master/Example3.py?ts=2): This example does the same thing as Example #1 but uses the authorization code flow (the most secure of the three flows). The script will open a login page in the web browser, ask the user to copy and paste the URL of the redirect page, parse for the code, use the code to get an access token, and submit a workflow. 
 
-[Workflow_via_CSV](https://github.com/ThinkSmart/API_Examples/tree/master/Workflow_via_CSV): These files can be used to initiate a workflow any number of times with field names and values taken from a CSV file. Uses resource owner flow and reports on data for each workflow instance, including errors. 
+[Workflow_via_CSV](https://github.com/ThinkSmart/API_Examples/tree/master/Workflow_via_CSV): These files can be used to initiate a workflow any number of times with field names and values taken from a CSV file. The template file uses resource owner flow and reports on data for each workflow instance, including errors. 
