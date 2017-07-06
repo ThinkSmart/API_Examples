@@ -6,7 +6,7 @@
 This script initiates workflows using field data from a CSV file. The first
 row of the CSV should contain field names, and subsequest rows should hold 
 field values (each row will be a separate instance of the workflow). The script
-creates a new txt file (in the same directory as main.py) each time it is run, 
+creates a new txt file (in the same directory as this file) each time it is run, 
 and writes the result of each workflow instance, including error messages.
 
 To use, create a workflow (don't change field names, i.e. element1), create a 
