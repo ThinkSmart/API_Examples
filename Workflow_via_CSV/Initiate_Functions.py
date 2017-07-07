@@ -1,18 +1,18 @@
 # Initiate_Functions.py
 # written and tested in Python 3.6.0
-# last updated 06/30/17
+# last updated 07/07/17
 
 import requests
 import json
 
 def getToken(url_root, username, password, client_id, client_secret):
 	"""
-	Given: Environment, user credentials, and client info.
+	Given: URL root, user credentials, and client info.
 	Return: Response of POST call for token.
 	"""
 
 	# concatenate environment address with piece of URL specific to API
-	url = url_root + 'auth/identity/connect/token'
+	url = '{}auth/identity/connect/token'.format(url_root)
 
 	# static header, see docs.thinksmart1.apiary.io for documentation
 	headers = {'Content-Type' : 'application/x-www-form-urlencoded'}
@@ -31,37 +31,40 @@ def getToken(url_root, username, password, client_id, client_secret):
 
 def getTemplateID(url_root, workflow_name, token):
 	"""
-	Given: Environment, name of workflow, and valid token.
+	Given: URL root, name of workflow, and valid token.
 	Return: Response of GET call for ID of template.
 	"""
 
 	# construct URL
-	# workflow_name must be quoted, e.g. ?$filter=WorkflowName eq 'CamTest'
+	# workflow_name must be quoted, e.g. ?$filter=WorkflowName eq 'Test'
 	url = ("{}api/v1/templates/dashboard?$filter=WorkflowName eq '{}'"
 					.format(url_root, workflow_name))
 
 	# needs token
-	headers = {'Authorization' : 'Bearer ' + token}
+	headers = {'Authorization' : 'Bearer {}'.format(token)}
 
 	# return GET call response
 	return requests.get(url, headers=headers)
 
 def getFormInfo(url_root, template_id, token):
 	"""
-	Given: Environment, ID of workflow, and valid token.
+	Given: URL root, ID of workflow, and valid token.
 	Return: Response of GET call for form info.
 	"""
 
+	# construct URL
 	url = '{}api/v1/workflows/form?templateId={}'.format(url_root, template_id)
 
-	headers = {'Authorization' : 'Bearer ' + token,
+	# needs token
+	headers = {'Authorization' : 'Bearer {}'.format(token),
 							'Content-Type' : 'application/json'}
 
+	# return GET call response
 	return requests.get(url, headers=headers)
 
-def createWorkflow(url_root, template_id, token, body):
+def initiateWorkflow(url_root, template_id, token, body):
 	"""
-	Given: Environment, ID of workflow, valid token, and field names and values.
+	Given: URL root, ID of workflow, valid token, and field names and values.
 	Return: Response of POST call to initiate workflow.
 	"""
 	
@@ -69,7 +72,7 @@ def createWorkflow(url_root, template_id, token, body):
 	url = '{}api/v1/workflows/{}/form'.format(url_root, template_id)
 
 	# needs token
-	headers = {'Authorization' : 'Bearer ' + token,
+	headers = {'Authorization' : 'Bearer {}'.format(token),
 							'Content-Type' : 'application/json'}
 
 	# encode body into JSON

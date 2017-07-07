@@ -1,17 +1,17 @@
 # Initiate_Template.py
 # written and tested in Python 3.6.0
-# last updated 07/06/17
+# last updated 07/07/17
 
 """
 This script initiates workflows using field data from a CSV file. The first
-row of the CSV should contain field names, and subsequest rows should hold 
+row of the CSV should contain field names, and all other rows should hold 
 field values (each row will be a separate instance of the workflow). The script
 creates a new txt file (in the same directory as this file) each time it is run, 
 and writes the result of each workflow instance, including error messages.
 
 To use, create a workflow (don't change field names, i.e. element1), create a 
-CSV based on the workflow, and update the global vars below. If you find bugs
-or errors that are not handled, please send them to cpierce@thinksmart.com
+CSV based on the workflow, and update the global variables below. If you find
+bugs or errors that are not handled, please send them to cpierce@thinksmart.com
 """
 
 import getpass
@@ -22,14 +22,24 @@ import json
 from Initiate_Functions import *
 import csv
 
-# global vars (currently specific to default prod)
-url_root = 'https://default.tap.thinksmart.com/prod/'
+# ---------------- #
+# Global Variables #
+# ---------------- #
+
+# replace tenant with your own
+url_root = 'https://tenant.tap.thinksmart.com/prod/'
+# fill in (must be strings)
+client_id = ''
+client_secret = ''
+workflow_name = ''
+csv_name = ''
+# enter username and password in command line during runtime
 username = input("Enter your TAP username: ")
 password = getpass.getpass()
-client_id = 'b858d97c24124c959ec0d78f3eccd77d'
-client_secret = '0WDF4cRc4gtEEhOBXkCH6dTj1NU18L8iL6+i3jHXoR4='
-workflow_name = 'InitiateTest'
-csv_name = 'TestFields.csv'
+
+# ---------------------------- #
+# Start Timer, Create txt File #
+# ---------------------------- #
 
 # get start time
 t0 = time.time()
@@ -44,6 +54,10 @@ f = open('{}{}.txt'.format(workflow_name, i), 'w')
 f.write(time.asctime() + "\n\n")
 f.write("Submitting {} with field values from {}...\n\n"
 				.format(workflow_name, csv_name))
+
+# --------- #
+# Get Token #
+# --------- #
 
 # get token response
 r = getToken(url_root, username, password, client_id, client_secret)
@@ -61,6 +75,10 @@ elif (str(r) == '<Response [400]>'):
 # decode JSON, get token
 token = json.loads(r.text).get('access_token')
 
+# --------------- #
+# Get Template ID #
+# --------------- #
+
 # get template ID response
 r = getTemplateID(url_root, workflow_name, token)
 # invalid workflow_name causes empty list value for 'Items' key in response dict
@@ -69,6 +87,10 @@ if (not json.loads(r.text).get('Items')):
 	sys.exit()
 # decode JSON, get ID
 template_id = json.loads(r.text).get('Items')[0].get('ID')
+
+# -------- #
+# Read CSV #
+# -------- #
 
 # open CSV
 try:
@@ -85,8 +107,7 @@ try:
 	field_names = next(csv_fields)
 # encoding may cause UnicodeDecodeError
 except UnicodeDecodeError as e:
-	f.write("Please use a .csv with UTF-8 encoding.\n" +
-					"In Sublime Text 3: File -> Save with Encoding -> UTF-8")
+	f.write("Please use a .csv with UTF-8 encoding.")
 	sys.exit()
 
 # make list of field names from workflow for comparison
@@ -100,20 +121,21 @@ csv_unused = set(field_names).difference(accepted_names)
 accepted_unused = set(accepted_names).difference(field_names)
 
 # report on comparison
-if (not csv_unused) and (not accepted_unused):
+mismatch = "Field names from {} that do not match {}: {}\n\n"
+if ((not csv_unused) and (not accepted_unused)):
 	f.write("All field names from {} and {} match\n\n"
 					.format(csv_name, workflow_name))
 elif (not accepted_unused):
-	f.write("Field names from {} that do not match {}: {}\n\n"
-					.format(csv_name, workflow_name, csv_unused))
+	f.write(mismatch.format(csv_name, workflow_name, csv_unused))
 elif (not csv_unused):
-	f.write("Field names from {} that do not match {}: {}\n\n"
-					.format(workflow_name, csv_name, accepted_unused))
+	f.write(mismatch.format(workflow_name, csv_name, accepted_unused))
 else:
-	f.write("Field names from {} that do not match {}: {}\n"
-					.format(csv_name, workflow_name, csv_unused))
-	f.write("Field names from {} that do not match {}: {}\n\n"
-				.format(workflow_name, csv_name, accepted_unused))
+	f.write(mismatch.format(csv_name, workflow_name, csv_unused))
+	f.write(mismatch.format(workflow_name, csv_name, accepted_unused))
+
+# ------------------ #
+# Initiate Workflows #
+# ------------------ #
 
 # count var for reporting
 submit_count = 0
@@ -129,7 +151,7 @@ for index, field_vals in enumerate(csv_fields, 2):
 	for i in range(len(field_names)):
 		body[field_names[i]] = field_vals[i]
 	# initiate workflow
-	r = createWorkflow(url_root, template_id, token, body)
+	r = initiateWorkflow(url_root, template_id, token, body)
 	# empty required field, unmatched dropdown value, etc. causes 400 response
 	if (str(r) == '<Response [400]>'):
 		f.write("Row {}: Error\n".format(index))
