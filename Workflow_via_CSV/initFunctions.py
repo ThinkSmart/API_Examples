@@ -1,6 +1,6 @@
-# Initiate_Functions.py
+# initFunctions.py
 # written and tested in Python 3.6.0
-# last updated 07/07/17
+# last updated 07/28/17
 
 import requests
 import json
@@ -29,16 +29,15 @@ def getToken(url_root, username, password, client_id, client_secret):
 	# return POST call response
 	return requests.post(url, headers=headers, data=body)
 
-def getTemplateID(url_root, workflow_name, token):
+def getTemplateID(url_root, token):
 	"""
 	Given: URL root, name of workflow, and valid token.
 	Return: Response of GET call for ID of template.
 	"""
 
 	# construct URL
-	# workflow_name must be quoted, e.g. ?$filter=WorkflowName eq 'Test'
-	url = ("{}api/v1/templates/dashboard?$filter=WorkflowName eq '{}'"
-					.format(url_root, workflow_name))
+	# choosing not to filter here, characters like '&' can cause problems
+	url = ("{}api/v1/templates/dashboard".format(url_root))
 
 	# needs token
 	headers = {'Authorization' : 'Bearer {}'.format(token)}
