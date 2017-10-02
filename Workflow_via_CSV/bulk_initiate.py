@@ -1,13 +1,13 @@
 # initTemplate.py
 # written and tested in Python 3.6.0
-# last updated 07/28/17
+# last updated 10/02/17
 
 """
 This script initiates workflows using field data from a CSV file. The first
 row of the CSV should contain field labels, and all other rows should hold 
 field values (each row will be a separate instance of the workflow). The script
-creates a new txt file (in the same directory as this file) each time it is run, 
-and writes the result of each workflow instance, including error messages.
+creates a new txt file (in same directory as this) each time it is run, and
+writes the result of each workflow instance, including error messages.
 
 To use, create a workflow, create a CSV based on the workflow, and update the 
 global variables below. If you find bugs or errors that are not handled, 
@@ -18,8 +18,8 @@ import getpass
 import time
 import os
 import sys
+from bulk_functions import *
 import json
-from resource_owner import *
 import csv
 from collections import defaultdict
 
@@ -27,8 +27,8 @@ from collections import defaultdict
 # Global Variables #
 # ---------------- #
 
-# replace tenant with your own
-url_root = 'https://tenant.tap.thinksmart.com/prod/'
+# replace tenant, environment, instance with your own
+url_root = 'https://tenant.environment.thinksmart.com/instance/'
 # fill in (must be strings)
 client_id = ''
 client_secret = ''
@@ -38,9 +38,9 @@ csv_name = ''
 username = input("Username: ")
 password = getpass.getpass()
 
-# ---------------------------- #
-# Start Timer, Create txt File #
-# ---------------------------- #
+# -------------------------- #
+# Start Timer, Create Report #
+# -------------------------- #
 
 # get start time
 t0 = time.time()
@@ -50,29 +50,32 @@ i = 0
 while os.path.exists('{}{}.txt'.format(workflow_name, i)):
 	i += 1
 
-# create txt file, write header
+# create txt file, write timestamp
 f = open('{}{}.txt'.format(workflow_name, i), 'w')
 f.write(time.asctime() + "\n\n")
-f.write("Submitting {} with field values from {}...\n\n"
-				.format(workflow_name, csv_name))
 
 # --------- #
 # Get Token #
 # --------- #
 
+# get time of first token (valid 3600 seconds)
+token_timer = time.time()
+
 # get token response
 r = getToken(url_root, username, password, client_id, client_secret)
 
 # invalid url_root causes 404 response
-if (str(r) == '<Response [404]>'):
+if (r.status_code == 404):
 	f.write("Invalid url_root")
 	sys.exit()
-elif (str(r) == '<Response [400]>'):
+elif (r.status_code == 400):
 	# invalid user credentials or client info causes 400 response
 	if (json.loads(r.text).get('error') == 'invalid_grant'):
-		f.write("Invalid username or password")
+		f.write("Invalid Username and/or Password.")
+	elif (json.loads(r.text).get('error') == 'unauthorized_client'):
+		f.write("Valid client_id and client_secret, invalid authentication flow.")
 	else:
-		f.write("Invalid client_id or client_secret")
+		f.write("Invalid client_id and/or client_secret.")
 	sys.exit()
 
 # decode JSON, get token
@@ -83,19 +86,19 @@ token = json.loads(r.text).get('access_token')
 # --------------- #
 
 # get template ID response
-r = getTemplateID(url_root, token)
+r = getTemplateID(url_root, workflow_name, token)
 
-# search for template
-template_id = None
-for w in json.loads(r.text).get('Items'):
-	if (w.get('WorkflowName') == workflow_name):
-		template_id = w.get('ID')
-		break
+# parse to where ID should be
+temp = json.loads(r.text).get('Items')
 
-# if template not found, report error
-if (not template_id):
-	f.write("Invalid workflow_name (has a field been added to the repository?)")
-	sys.exit()
+# if empty in that location, write and exit
+if (not temp):
+	f.write("Invalid workflow_name. This may occur when {} {}"
+		.format("the name contains non-alphabetic characters or",
+			"none of the workflow fields have been added to the repository."))
+# else assign it
+else:
+	template_id = temp[0].get('ID')
 
 # -------- #
 # Read CSV #
@@ -115,7 +118,7 @@ csv_fields = csv.reader(readable)
 try:
 	csv_labels = next(csv_fields)
 # encoding may cause UnicodeDecodeError
-except UnicodeDecodeError as e:
+except UnicodeDecodeError:
 	f.write("Please use a .csv with UTF-8 encoding.")
 	sys.exit()
 
@@ -140,42 +143,44 @@ for field in form_fields:
 # hold labels and names that are validated with d
 labels, names = [], []
 i = 0
-# use a while loop here, because popping labels inside for loop will skip some
+# use a while loop b/c popping labels inside for loop will skip some
 while (i < len(csv_labels)):
-	# v = value for key from csv_labels, False if not present
+	# v = value for key from csv_labels
 	v = d.get(csv_labels[i], False)
-	# if v is True (k is False if key not present, OR list empty)
+	# if v is True (is False if key not present)
 	if (v):
+		current = csv_labels.pop(i)
 		# append now-validated name and label to lists
-		labels.append("{} ({})".format(csv_labels.pop(i), v[0]))
+		labels.append("{} ({})".format(current, v[0]))
 		names.append(v.pop(0))
+		# if v is empty, pop key (lower time complexity w/ for loop below)
+		if (len(v) == 0):
+			d.pop(current)
 	else:
 		i += 1
 
 # gather remaining fields from d
 remainder = []
-# for each key, if value list is not empty...
+# for each remaining key...
 for k, v in d.items():
-	if (v):
-		# if value has multiple values, put list in parens
-		if (len(v) > 1):
-			remainder.append("{} ({})".format(k, ", ".join(v)))
-		# else put single value in parens
-		else:
-			remainder.append("{} ({})".format(k, v[0]))
+	# if value has multiple values, put list in parens
+	if (len(v) > 1):
+		remainder.append("{} ({})".format(k, ", ".join(v)))
+	# else put single value in parens
+	else:
+		remainder.append("{} ({})".format(k, v[0]))
 
 # report on comparison
 mismatch = "Labels from {} that do not match {}:\n{}\n\n"
-if ((not csv_labels) and (not remainder)):
-	f.write("All field names from {} and {} match\n\n"
-					.format(csv_name, workflow_name))
+if ((not remainder) and (not csv_labels)):
+	pass
 elif (not remainder):
-	f.write(mismatch.format(csv_name, workflow_name, "\n".join(csv_labels)))
+	f.append(mismatch.format(csv_name, workflow_name, "\n".join(csv_labels)))
 elif (not csv_labels):
-	f.write(mismatch.format(workflow_name, csv_name, "\n".join(remainder)))
+	f.append(mismatch.format(workflow_name, csv_name, "\n".join(remainder)))
 else:
-	f.write(mismatch.format(csv_name, workflow_name, "\n".join(csv_labels)))
-	f.write(mismatch.format(workflow_name, csv_name, "\n".join(remainder)))
+	f.append(mismatch.format(csv_name, workflow_name, "\n".join(csv_labels)))
+	f.append(mismatch.format(workflow_name, csv_name, "\n".join(remainder)))
 
 # ------------------ #
 # Initiate Workflows #
@@ -183,12 +188,16 @@ else:
 
 # count var for reporting
 submit_count = 0
+
 # for rows below first, construct body and make API call
 for row, field_vals in enumerate(csv_fields, 2):
+
 	# refresh token if needed
-	if ((time.time()-t0) > 3600):
+	if ((time.time()-token_timer) > 3500):
+		token_timer = time.time()
 		r = getToken(url_root, username, password, client_id, client_secret)
 		token = json.loads(r.text).get('access_token')
+
 	# clear body
 	body = {}
 	# fill body
@@ -197,13 +206,11 @@ for row, field_vals in enumerate(csv_fields, 2):
 	# initiate workflow
 	r = initiateWorkflow(url_root, template_id, token, body)
 	# empty required field, unmatched dropdown value, etc. causes 400 response
-	if (str(r) == '<Response [400]>'):
-		f.write("Row {}: Error\n".format(row))
-		f.write("------------" + "\n")
-		f.write(str(r.text) + "\n\n")
+	if (r.status_code == 400):
+		f.write("----------\nRow {}: Error\n----------\n").format(row)
+		f.write("{}\n\n".format(r.text))
 	else:
-		f.write("Row {}: Submitted\n".format(row))
-		f.write("----------------" + "\n")
+		f.write("----------\nRow {}: Submitted\n----------\n").format(row)
 		for i, val in enumerate(body):
 			f.write("{} : {}\n".format(labels[i], body[val]))
 		f.write("\n")
@@ -211,5 +218,5 @@ for row, field_vals in enumerate(csv_fields, 2):
 
 # report on submits and errors, time
 f.write("{} submitted on {} of {} tries\n"
-				.format(workflow_name, submit_count, row-1))
+	.format(workflow_name, submit_count, row-1))
 f.write("Time elapsed: {}s".format(round(time.time()-t0, 3)))

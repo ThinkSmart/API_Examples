@@ -1,6 +1,6 @@
 # initFunctions.py
 # written and tested in Python 3.6.0
-# last updated 07/28/17
+# last updated 10/02/17
 
 import requests
 import json
@@ -19,25 +19,26 @@ def getToken(url_root, username, password, client_id, client_secret):
 
 	# create dict for body
 	body = {'grant_type' : 'password',
-					'scope' : 'api',
-					'redirect_uri' : 'testuri',
-					'username' : username,
-					'password' : password,
-					'client_id' : client_id,
-					'client_secret' : client_secret}
+		'scope' : 'api',
+		'redirect_uri' : 'testuri',
+		'username' : username,
+		'password' : password,
+		'client_id' : client_id,
+		'client_secret' : client_secret}
 
 	# return POST call response
 	return requests.post(url, headers=headers, data=body)
 
-def getTemplateID(url_root, token):
+def getTemplateID(url_root, workflow_name, token):
 	"""
 	Given: URL root, name of workflow, and valid token.
 	Return: Response of GET call for ID of template.
 	"""
 
 	# construct URL
-	# choosing not to filter here, characters like '&' can cause problems
-	url = ("{}api/v1/templates/dashboard".format(url_root))
+	# filtering here, but characters like '&' can cause problems
+	url = ("{}api/v1/templates/dashboard?$filter=WorkflowName eq '{}'"
+		.format(url_root, workflow_name))
 
 	# needs token
 	headers = {'Authorization' : 'Bearer {}'.format(token)}
@@ -56,7 +57,7 @@ def getFormInfo(url_root, template_id, token):
 
 	# needs token
 	headers = {'Authorization' : 'Bearer {}'.format(token),
-							'Content-Type' : 'application/json'}
+		'Content-Type' : 'application/json'}
 
 	# return GET call response
 	return requests.get(url, headers=headers)
@@ -72,7 +73,7 @@ def initiateWorkflow(url_root, template_id, token, body):
 
 	# needs token
 	headers = {'Authorization' : 'Bearer {}'.format(token),
-							'Content-Type' : 'application/json'}
+		'Content-Type' : 'application/json'}
 
 	# encode body into JSON
 	json_body = json.dumps(body)
