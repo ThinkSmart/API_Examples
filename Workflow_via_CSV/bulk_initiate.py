@@ -1,4 +1,4 @@
-# initTemplate.py
+# bulk_initiate.py
 # written and tested in Python 3.6.0
 # last updated 10/02/17
 
