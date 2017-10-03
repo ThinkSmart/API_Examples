@@ -1,5 +1,5 @@
 # bulk_initiate.py
-# written and tested in Python 3.6.0
+# written and tested in Python 3.6.2
 # last updated 10/02/17
 
 """
@@ -28,12 +28,12 @@ from collections import defaultdict
 # ---------------- #
 
 # replace tenant, environment, instance with your own
-url_root = 'https://tenant.environment.thinksmart.com/instance/'
+url_root = 'https://default.stagingtap.thinksmart.com/default/'
 # fill in (must be strings)
-client_id = ''
-client_secret = ''
-workflow_name = ''
-csv_name = ''
+client_id = 'b473d2ace41144bb87d63be7584ecec1'
+client_secret = 'Yjr1ZnzMgN58x7H+WlPM6WRTzk1B7RocuYkOEuVhcpw='
+workflow_name = 'PyScript Test'
+csv_name = '/Users/cameronpierce/Dropbox/thinksmart/api/PyScript.csv'
 # enter username and password in command line during runtime
 username = input("Username: ")
 password = getpass.getpass()
@@ -175,12 +175,12 @@ mismatch = "Labels from {} that do not match {}:\n{}\n\n"
 if ((not remainder) and (not csv_labels)):
 	pass
 elif (not remainder):
-	f.append(mismatch.format(csv_name, workflow_name, "\n".join(csv_labels)))
+	f.write(mismatch.format(csv_name, workflow_name, "\n".join(csv_labels)))
 elif (not csv_labels):
-	f.append(mismatch.format(workflow_name, csv_name, "\n".join(remainder)))
+	f.write(mismatch.format(workflow_name, csv_name, "\n".join(remainder)))
 else:
-	f.append(mismatch.format(csv_name, workflow_name, "\n".join(csv_labels)))
-	f.append(mismatch.format(workflow_name, csv_name, "\n".join(remainder)))
+	f.write(mismatch.format(csv_name, workflow_name, "\n".join(csv_labels)))
+	f.write(mismatch.format(workflow_name, csv_name, "\n".join(remainder)))
 
 # ------------------ #
 # Initiate Workflows #
@@ -207,10 +207,10 @@ for row, field_vals in enumerate(csv_fields, 2):
 	r = initiateWorkflow(url_root, template_id, token, body)
 	# empty required field, unmatched dropdown value, etc. causes 400 response
 	if (r.status_code == 400):
-		f.write("----------\nRow {}: Error\n----------\n").format(row)
+		f.write("{0}\nRow {1}: Error\n{0}\n".format("-"*(len(str(row))+11),row))
 		f.write("{}\n\n".format(r.text))
 	else:
-		f.write("----------\nRow {}: Submitted\n----------\n").format(row)
+		f.write("{0}\nRow {1}: Submitted\n{0}\n".format("-"*(len(str(row))+15),row))
 		for i, val in enumerate(body):
 			f.write("{} : {}\n".format(labels[i], body[val]))
 		f.write("\n")
