@@ -3,11 +3,11 @@
 # last updated 10/02/17
 
 """
-This script initiates workflows using field data from a CSV file. The first
-row of the CSV should contain field labels, and all other rows should hold 
-field values (each row will be a separate instance of the workflow). The script
-creates a new txt file (in same directory as this) each time it is run, and
-writes the result of each workflow instance, including error messages.
+This script initiates workflows using data from a CSV file. The first row of 
+the CSV should contain field labels, and all other rows should hold field 
+values (each row will be a separate instance of the workflow). The script
+creates a txt file (in same directory as this) each time it is run, and writes
+the result of each workflow instance, including error messages.
 
 To use, create a workflow, create a CSV based on the workflow, and update the 
 global variables below. If you find bugs or errors that are not handled, 
@@ -125,6 +125,10 @@ except UnicodeDecodeError:
 # ----------------------------- #
 # Convert Field Labels to Names #
 # ----------------------------- #
+
+# features to add here:
+	# accept names and labels
+	# accept labels that meet word-similarity threshold (in event of typo)
 
 # get form info from workflow
 r = getFormInfo(url_root, template_id, token)
