@@ -27,13 +27,13 @@ from collections import defaultdict
 # Global Variables #
 # ---------------- #
 
-# replace tenant, environment, instance with your own
-url_root = 'https://default.stagingtap.thinksmart.com/default/'
+# replace tenant, environment, and instance with your own
+url_root = 'https://tenant.environment.thinksmart.com/instance/'
 # fill in (must be strings)
-client_id = 'b473d2ace41144bb87d63be7584ecec1'
-client_secret = 'Yjr1ZnzMgN58x7H+WlPM6WRTzk1B7RocuYkOEuVhcpw='
-workflow_name = 'PyScript Test'
-csv_name = '/Users/cameronpierce/Dropbox/thinksmart/api/PyScript.csv'
+client_id = ''
+client_secret = ''
+workflow_name = ''
+csv_name = ''
 # enter username and password in command line during runtime
 username = input("Username: ")
 password = getpass.getpass()
@@ -68,8 +68,8 @@ r = getToken(url_root, username, password, client_id, client_secret)
 if (r.status_code == 404):
 	f.write("Invalid url_root")
 	sys.exit()
+# invalid user credentials or client info causes 400 response
 elif (r.status_code == 400):
-	# invalid user credentials or client info causes 400 response
 	if (json.loads(r.text).get('error') == 'invalid_grant'):
 		f.write("Invalid Username and/or Password.")
 	elif (json.loads(r.text).get('error') == 'unauthorized_client'):
@@ -96,6 +96,7 @@ if (not temp):
 	f.write("Invalid workflow_name. This may occur when {} {}"
 		.format("the name contains non-alphabetic characters or",
 			"none of the workflow fields have been added to the repository."))
+	sys.exit()
 # else assign it
 else:
 	template_id = temp[0].get('ID')
